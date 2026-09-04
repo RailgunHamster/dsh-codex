@@ -1,0 +1,13 @@
+# dsh-codex bundle patch: mount the split-routing proxy host plugin.
+# The row `config` here is the composition base layer of the `codex` settings
+# namespace; user edits made in the DSH settings UI land in settings.yaml and
+# override these values (and hot-apply via the settings watcher).
+- insert:
+    - id: codex
+      name: 'dsh-codex'
+      config:
+        enabled: true
+        listenHost: '127.0.0.1'
+        listenPort: 17890
+        upstream: 'http://127.0.0.1:7890'
+        hosts: ['chatgpt.com', 'auth.openai.com']
