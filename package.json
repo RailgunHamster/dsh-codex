@@ -1,6 +1,6 @@
 {
   "name": "dsh-codex",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Codex split-routing for DeepSeek Harness: wraps in-process fetch so only configured hosts (chatgpt.com, auth.openai.com) go through an upstream proxy; everything else stays direct. Configurable in the DSH settings UI, no launch-time setup.",
   "type": "module",
   "main": "lib/index.js",
