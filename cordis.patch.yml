@@ -1,7 +1,7 @@
 # dsh-codex bundle patch: mount the split-routing proxy host plugin.
-# The row `config` here is the composition base layer of the `codex` settings
-# namespace; user edits made in the DSH settings UI land in settings.yaml and
-# override these values (and apply immediately — no restart needed).
+# The row `config` here is the bundle layer; the profile's cordis.patch.yml
+# `codex` entry overrides it. Edits made in the DSH settings UI are written to
+# that profile entry and apply immediately (the Config is volatile).
 - insert:
     - id: codex
       name: 'dsh-codex'

@@ -18,33 +18,44 @@ dsh plugin --profile web add github:RailgunHamster/dsh-codex
 
 （或本地目录：`dsh plugin --profile web add file:D:/git/dsh-codex`）
 
-装完重启 `dsh web`。bundle patch 会挂载一个宿主插件行（`codex`）并带一个设置页。
+装完重启 `dsh web`。bundle patch 会挂载一个宿主插件行（`codex`），其配置出现在 DSH 设置界面里。
+
+需要 DSH 0.1.7-rc.1 及以上（以 `@deepseek-ai/dsh` peer 声明）。DSH 0.1.5 请用 dsh-codex 0.3.0，见 [docs/compatibility-0.2.0.md](docs/compatibility-0.2.0.md)。
 
 ## 路由要求：`transport: sse`
 
-pi-ai 的 Codex 后端默认（`auto`）优先用 **WebSocket**，而 WebSocket 不经过 fetch。需在 `$DSH_HOME/settings.yaml` 的 `openai-codex` 路由上强制走基于 fetch 的 SSE 通道：
+pi-ai 的 Codex 后端默认（`auto`）优先用 **WebSocket**，而 WebSocket 不经过 fetch。需在 profile patch `$DSH_HOME/profiles/<profile>/cordis.patch.yml` 的 `openai-codex` 路由上强制走基于 fetch 的 SSE 通道：
 
 ```yaml
-llm-pi-ai:
-  providers:
-    openai-codex:
-      displayName: ChatGPT Codex
-      transport: sse
+- id: llm-pi-ai
+  config:
+    providers:
+      openai-codex:
+        displayName: ChatGPT Codex
+        transport: sse
 ```
+
+DSH 0.1.7+ 首次启动时会把已有 `$DSH_HOME/settings.yaml` 的 `llm-pi-ai:` 段一次性导入该条目；0.1.7 之前同样的 `providers` 块写在 `settings.yaml` 里。
 
 SSE 端点就是官方客户端的退路（含 zstd 请求压缩），OAuth 换 token（`auth.openai.com`）和模型调用（`chatgpt.com/backend-api`）都会遵循分流规则。
 
 ## 配置
 
-DSH 网页界面 设置 → **Codex**：
+`codex` 条目会列在 DSH 设置界面（通用插件设置表单）里：
 
 | 字段 | 默认值 | 含义 |
 | --- | --- | --- |
-| 启用 | 开 | 是否启用分流 |
-| 上游代理 | `http://127.0.0.1:7890` | **仅**白名单域名使用的上游代理 |
-| 走代理的域名 | `chatgpt.com`、`auth.openai.com` | 走上游的域名后缀（子域自动匹配） |
+| `enabled` | `true` | 是否启用分流 |
+| `upstream` | `http://127.0.0.1:7890` | **仅**白名单域名使用的上游代理 |
+| `hosts` | `chatgpt.com`、`auth.openai.com` | 走上游的域名后缀（子域自动匹配） |
 
-配置保存在 `$DSH_HOME/settings.yaml` 的 `codex:` 命名空间下，**保存即生效**（包装器每次请求都读当前配置），无需重启。
+整个 Config 是 volatile 的：修改写回 profile `cordis.patch.yml` 的 `codex` 条目并**保存即生效**——DSH 原地更新配置引用，包装器每次请求都读它，无需重启。也可以直接手改同一条目：
+
+```yaml
+- id: codex
+  config:
+    upstream: http://127.0.0.1:7897
+```
 
 ## 原理
 

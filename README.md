@@ -18,33 +18,44 @@ dsh plugin --profile web add github:RailgunHamster/dsh-codex
 
 (or `dsh plugin --profile web add file:/path/to/dsh-codex` from a local checkout)
 
-Restart `dsh web` afterwards. The bundle patch mounts one host plugin row (`codex`) and ships a settings page.
+Restart `dsh web` afterwards. The bundle patch mounts one host plugin row (`codex`); its settings appear in the DSH settings UI.
+
+Requires DSH 0.1.7-rc.1 or later (declared as a `@deepseek-ai/dsh` peer). On DSH 0.1.5 use dsh-codex 0.3.0; see [docs/compatibility-0.2.0.md](docs/compatibility-0.2.0.md).
 
 ## Provider route requirement: `transport: sse`
 
-pi-ai's Codex backend prefers a **WebSocket** transport when left on `auto`, and a WebSocket does not go through `fetch`. Force the fetch-based SSE path on the `openai-codex` provider route in `$DSH_HOME/settings.yaml`:
+pi-ai's Codex backend prefers a **WebSocket** transport when left on `auto`, and a WebSocket does not go through `fetch`. Force the fetch-based SSE path on the `openai-codex` provider route in the profile patch `$DSH_HOME/profiles/<profile>/cordis.patch.yml`:
 
 ```yaml
-llm-pi-ai:
-  providers:
-    openai-codex:
-      displayName: ChatGPT Codex
-      transport: sse
+- id: llm-pi-ai
+  config:
+    providers:
+      openai-codex:
+        displayName: ChatGPT Codex
+        transport: sse
 ```
+
+DSH 0.1.7+ imports an existing `$DSH_HOME/settings.yaml` `llm-pi-ai:` section into that entry once on first boot; before 0.1.7 the same `providers` block lived in `settings.yaml`.
 
 The SSE endpoint is the same one the official client falls back to (zstd-compressed request bodies included), and both the OAuth token exchange (`auth.openai.com`) and model calls (`chatgpt.com/backend-api`) then obey the split routing.
 
 ## Configuration
 
-Settings → **Codex** section in the DSH web UI:
+The `codex` entry is listed in the DSH settings UI (generic plugin settings form):
 
 | field | default | meaning |
 | --- | --- | --- |
-| 启用 | on | route allow-listed hosts through the upstream |
-| 上游代理 | `http://127.0.0.1:7890` | upstream proxy used **only** for allow-listed hosts |
-| 走代理的域名 | `chatgpt.com`, `auth.openai.com` | host suffixes routed upstream (subdomains match) |
+| `enabled` | `true` | route allow-listed hosts through the upstream |
+| `upstream` | `http://127.0.0.1:7890` | upstream proxy used **only** for allow-listed hosts |
+| `hosts` | `chatgpt.com`, `auth.openai.com` | host suffixes routed upstream (subdomains match) |
 
-Values persist in `$DSH_HOME/settings.yaml` under the `codex:` namespace and **apply immediately** — the wrapper reads the current settings on every request, no reboot needed.
+The whole Config is volatile: edits are written to the profile's `cordis.patch.yml` `codex` entry and **apply immediately** — DSH updates the config reference in place and the wrapper reads it on every request, no reboot needed. Editing the same entry by hand works too:
+
+```yaml
+- id: codex
+  config:
+    upstream: http://127.0.0.1:7897
+```
 
 ## How it works
 
